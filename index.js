@@ -19,7 +19,7 @@ const Chats = [
 
 module.exports = () => {
 
-    cron.schedule('0 5 * * *', job);
+    cron.schedule('0 10 * * *', job);
     function job() { // 5 am
         console.log('running task');
         // calc today's sunrise and sunset:
@@ -48,7 +48,7 @@ module.exports = () => {
         d.setHours(hrs); d.setMinutes(mins);
         return d;
     }
-
+ 
     function getZmanitTime(zmanitHr, sunriseD, zmanit) {
         return new Date(sunriseD.getTime() + (zmanit * zmanitHr)).toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' })
     }
