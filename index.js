@@ -1,4 +1,3 @@
-var cron = require('node-cron');
 var axios = require("axios");
 var sun = require('sun-time')
 
@@ -16,59 +15,90 @@ const Chats = [
     // }
 ]
 
+class Zmanim {
 
-module.exports = () => {
+    constructor() {
+        this.sunriseD = null;
+        this.sunsetD = null;
+        this.zmanit = null;
+    }
 
-    cron.schedule('0 10 * * *', job);
-    function job() { // 5 am
+    job() { // 5 am
         console.log('running task');
         // calc today's sunrise and sunset:
-        console.log('Chats: ', Chats);
         Chats.forEach(chat => {
             const sunrise = sun.rise(chat.city),
                 sunset = sun.set(chat.city);
-            let hazot, endOfFourth;
             console.log('sunrise: ', sunrise);
             console.log('sunset: ', sunset);
 
-            const sunriseD = timeToDate(sunrise);
-            const sunsetD = timeToDate(sunset);
-            const zmanit = (sunsetD.getTime() - sunriseD.getTime()) / 12;
-            console.log('zmanit: ', zmanit);
-            hazot = getZmanitTime(6, sunriseD, zmanit)
-            endOfFourth = getZmanitTime(4, sunriseD, zmanit)
-            sendToChatId(chat.chatId, endOfFourth, hazot)
+            this.sunriseD = this.timeToDate(sunrise);
+            this.sunsetD = this.timeToDate(sunset);
+            this.zmanit = (this.sunsetD.getTime() - this.sunriseD.getTime()) / 12;
+            console.log('zmanit ms: ', this.zmanit);
+            const hazot = this.getZmanitTime(6)
+            const endOfFourth = this.getZmanitTime(4)
+            const sixAndAHalf = this.getZmanitTime(6.5);
+            const twelve = this.getZmanitTime(12);
+            sendToChatId({ chatId: chat.chatId, endOfFourth, hazot, sixAndAHalf, twelve })
         })
     }
 
-    function timeToDate(time) {
+    timeToDate(time) {
         const d = new Date();
         const timeSplit = time.split(":");
         const hrs = timeSplit[0], mins = timeSplit[1];
         d.setHours(hrs); d.setMinutes(mins);
         return d;
     }
- 
-    function getZmanitTime(zmanitHr, sunriseD, zmanit) {
-        return new Date(sunriseD.getTime() + (zmanit * zmanitHr)).toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' })
-    }
 
-    async function sendToChatId(chatId, endOfFourth, hazot) {
-        const endOfFourthFormatted = formatForMessage(endOfFourth);
-        const hazotFormatted = formatForMessage(hazot);
-        const message = `סוף שעה רביעית: ${endOfFourthFormatted}\nחצות: ${hazotFormatted}`;
-        try {
-            const res = await axios.post(`https://api.telegram.org/bot${ENV.BotToken}/sendMessage`, { chat_id: chatId, text: message })
-        } catch (e) {
-            console.log("e?.response?.data: ", e?.response?.data);
-        }
-    }
-
-    function formatForMessage(localeString) {
-        console.log('localeString: ', localeString);
-        const split = localeString.split(", ")[1].split(":");
-        console.log('split: ', split);
-        return `${split[0]}:${split[1]}`
+    getZmanitTime(zmanitHr) {
+        return new Date(this.sunriseD.getTime() + (this.zmanit * zmanitHr)).toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' })
     }
 
 }
+
+/**
+ * 
+ * @param {{ chatId:string; endOfFourth:string; hazot:string; sixAndAHalf:string; twelve:string; }} param0 
+ */
+async function sendToChatId({ chatId, endOfFourth, hazot, sixAndAHalf, twelve }) {
+    const endOfFourthFormatted = formatForMessage(endOfFourth);
+    const hazotFormatted = formatForMessage(hazot);
+    const sixAndAHalfFormatted = formatForMessage(sixAndAHalf);
+    const sunsetFormatted = formatForMessage(twelve);
+    console.log('endOfFourthFormatted: ', endOfFourthFormatted);
+    console.log('sixAndAHalfFormatted: ', sixAndAHalfFormatted);
+    console.log('hazotFormatted: ', hazotFormatted);
+    console.log('sunsetFormatted: ', sunsetFormatted);
+    const message = [
+        `**⌛ סוף זמן תפילה לגר"א** (=סוף שעה רביעית): ${endOfFourthFormatted}`,
+        "",
+        `**☀️ חצות - סוף זמן  תפילה בדיעבד** (=שעה שישית): ${hazotFormatted}`,
+        "",
+        `**⌚ אפשר להתחיל מנחה (גדולה)** (=שעה שישית וחצי): ${sixAndAHalfFormatted}`,
+        "",
+        `**🌇 שקיעה - סוף זמן מנחה (=סוף שעה 12): ${sunsetFormatted}`
+    ];
+    try {
+        const { data } = await axios.post(`https://api.telegram.org/bot${ENV.BotToken}/sendMessage`,
+            {
+                chat_id: chatId,
+                text: message.join("\n"),
+                parse_mode: "markdown"
+            }
+        )
+        console.log('telegram sendMessage: ', data);
+    } catch (e) {
+        console.log("ERROR: ", e?.response?.data);
+    }
+}
+
+function formatForMessage(localeString) {
+    const split = localeString.split(", ")[1].split(":");
+    return `${split[0]}:${split[1]}`
+}
+
+const zman = new Zmanim();
+// cron.schedule('0 10 * * *', zman.job);
+zman.job();
