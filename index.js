@@ -7,12 +7,14 @@ const ENV = { BotToken: "5369122007:AAH91_qlxfsK8Kshc1ihP3Op9Nn_ThMY1bQ" };
 const Chats = [
     {
         chatId: "-1001869916477",
-        city: "Raanana"
+        city: "Raanana",
+        cityName: "רעננה",
     },
-    // {
-    //     chatId: "",
-    //     city: "Jerusalem"
-    // }
+    {
+        chatId: "-1001940113774",
+        city: "Jerusalem",
+        cityName: "ירושלים",
+    }
 ]
 
 class Zmanim {
@@ -40,7 +42,7 @@ class Zmanim {
             const endOfFourth = this.getZmanitTime(4)
             const sixAndAHalf = this.getZmanitTime(6.5);
             const twelve = this.getZmanitTime(12);
-            sendToChatId({ chatId: chat.chatId, endOfFourth, hazot, sixAndAHalf, twelve })
+            sendToChatId({ chatId: chat.chatId, cityName: chat.cityName, hours: { endOfFourth, hazot, sixAndAHalf, twelve } })
         })
     }
 
@@ -59,10 +61,11 @@ class Zmanim {
 }
 
 /**
- * 
- * @param {{ chatId:string; endOfFourth:string; hazot:string; sixAndAHalf:string; twelve:string; }} param0 
+ * @typedef {{ endOfFourth:string; hazot:string; sixAndAHalf:string; twelve:string; }} Hours
+ * @param {{ chatId:string; cityName:string; hours: Hours }} param0 
  */
-async function sendToChatId({ chatId, endOfFourth, hazot, sixAndAHalf, twelve }) {
+async function sendToChatId({ cityName, chatId, hours }) {
+    const { endOfFourth, hazot, sixAndAHalf, twelve } = hours;
     const endOfFourthFormatted = formatForMessage(endOfFourth);
     const hazotFormatted = formatForMessage(hazot);
     const sixAndAHalfFormatted = formatForMessage(sixAndAHalf);
@@ -72,7 +75,8 @@ async function sendToChatId({ chatId, endOfFourth, hazot, sixAndAHalf, twelve })
     console.log('hazotFormatted: ', hazotFormatted);
     console.log('sunsetFormatted: ', sunsetFormatted);
     const message = [
-        `**⌛ סוף זמן תפילה לגר"א** (=סוף שעה רביעית): ${endOfFourthFormatted}`,
+        `זמני תפילות היום ב${cityName}:`,
+            `**⌛ סוף זמן תפילה לגר"א** (=סוף שעה רביעית): ${endOfFourthFormatted}`,
         "",
         `**☀️ חצות - סוף זמן  תפילה בדיעבד** (=שעה שישית): ${hazotFormatted}`,
         "",
