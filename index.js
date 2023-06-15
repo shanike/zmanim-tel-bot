@@ -17,6 +17,13 @@ const Chats = [
     }
 ]
 
+function log(...params) {
+    console.log("\n", new Date(), "LOG |", ...params, ";;;")
+}
+function error(...params) {
+    console.error("\n", new Date(), "ERROR |", ...params, ";;;")
+}
+
 class Zmanim {
 
     constructor() {
@@ -26,18 +33,18 @@ class Zmanim {
     }
 
     job() { // 5 am
-        console.log('running task');
+        log('running task');
         // calc today's sunrise and sunset:
         Chats.forEach(chat => {
             const sunrise = sun.rise(chat.city),
                 sunset = sun.set(chat.city);
-            console.log('sunrise: ', sunrise);
-            console.log('sunset: ', sunset);
+            log('sunrise: ', sunrise);
+            log('sunset: ', sunset);
 
             this.sunriseD = this.timeToDate(sunrise);
             this.sunsetD = this.timeToDate(sunset);
             this.zmanit = (this.sunsetD.getTime() - this.sunriseD.getTime()) / 12;
-            console.log('zmanit ms: ', this.zmanit);
+            log('zmanit ms: ', this.zmanit);
             const hazot = this.getZmanitTime(6)
             const endOfFourth = this.getZmanitTime(4)
             const sixAndAHalf = this.getZmanitTime(6.5);
@@ -70,13 +77,13 @@ async function sendToChatId({ cityName, chatId, hours }) {
     const hazotFormatted = formatForMessage(hazot);
     const sixAndAHalfFormatted = formatForMessage(sixAndAHalf);
     const sunsetFormatted = formatForMessage(twelve);
-    console.log('endOfFourthFormatted: ', endOfFourthFormatted);
-    console.log('sixAndAHalfFormatted: ', sixAndAHalfFormatted);
-    console.log('hazotFormatted: ', hazotFormatted);
-    console.log('sunsetFormatted: ', sunsetFormatted);
+    log('endOfFourthFormatted: ', endOfFourthFormatted);
+    log('sixAndAHalfFormatted: ', sixAndAHalfFormatted);
+    log('hazotFormatted: ', hazotFormatted);
+    log('sunsetFormatted: ', sunsetFormatted);
     const message = [
         `זמני תפילות היום ב${cityName}:`,
-            `**⌛ סוף זמן תפילה לגר"א** (=סוף שעה רביעית): ${endOfFourthFormatted}`,
+        `**⌛ סוף זמן תפילה לגר"א** (=סוף שעה רביעית): ${endOfFourthFormatted}`,
         "",
         `**☀️ חצות - סוף זמן  תפילה בדיעבד** (=שעה שישית): ${hazotFormatted}`,
         "",
@@ -92,9 +99,9 @@ async function sendToChatId({ cityName, chatId, hours }) {
                 parse_mode: "markdown"
             }
         )
-        console.log('telegram sendMessage: ', data);
+        log('telegram sendMessage: ', data);
     } catch (e) {
-        console.log("ERROR: ", e?.response?.data);
+        error(e?.response?.data);
     }
 }
 
