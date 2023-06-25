@@ -1,8 +1,9 @@
 var axios = require("axios");
-var sun = require('sun-time')
+var sun = require('sun-time');
+require("dotenv").config()
 
 
-const ENV = { BotToken: "5369122007:AAH91_qlxfsK8Kshc1ihP3Op9Nn_ThMY1bQ" };
+const ENV = { BotToken: "5369122007:AAH91_qlxfsK8Kshc1ihP3Op9Nn_ThMY1bQ", PROD: false };
 
 const Chats = [
     {
@@ -32,7 +33,7 @@ class Zmanim {
         this.zmanit = null;
     }
 
-    job() { // 5 am
+    job() {
         log('running task');
         // calc today's sunrise and sunset:
         Chats.forEach(chat => {
@@ -47,9 +48,7 @@ class Zmanim {
             log('zmanit ms: ', this.zmanit);
             const hazot = this.getZmanitTime(6)
             const endOfFourth = this.getZmanitTime(4)
-            const sixAndAHalf = this.getZmanitTime(6.5);
-            const twelve = this.getZmanitTime(12);
-            sendToChatId({ chatId: chat.chatId, cityName: chat.cityName, hours: { endOfFourth, hazot, sixAndAHalf, twelve } })
+            sendToChatId({ chatId: chat.chatId, cityName: chat.cityName, hours: { endOfFourth, hazot } })
         })
     }
 
@@ -68,30 +67,24 @@ class Zmanim {
 }
 
 /**
- * @typedef {{ endOfFourth:string; hazot:string; sixAndAHalf:string; twelve:string; }} Hours
+ * @typedef {{ endOfFourth:string; hazot:string; }} Hours
  * @param {{ chatId:string; cityName:string; hours: Hours }} param0 
  */
 async function sendToChatId({ cityName, chatId, hours }) {
-    const { endOfFourth, hazot, sixAndAHalf, twelve } = hours;
+    const { endOfFourth, hazot } = hours;
     const endOfFourthFormatted = formatForMessage(endOfFourth);
     const hazotFormatted = formatForMessage(hazot);
-    const sixAndAHalfFormatted = formatForMessage(sixAndAHalf);
-    const sunsetFormatted = formatForMessage(twelve);
     log('endOfFourthFormatted: ', endOfFourthFormatted);
-    log('sixAndAHalfFormatted: ', sixAndAHalfFormatted);
     log('hazotFormatted: ', hazotFormatted);
-    log('sunsetFormatted: ', sunsetFormatted);
     const message = [
-        `זמני תפילות היום ב${cityName}:`,
+        `תפילת שחרית, ${cityName}:`,
         `**⌛ סוף זמן תפילה לגר"א** (=סוף שעה רביעית): ${endOfFourthFormatted}`,
         "",
         `**☀️ חצות - סוף זמן  תפילה בדיעבד** (=שעה שישית): ${hazotFormatted}`,
-        "",
-        `**⌚ אפשר להתחיל מנחה (גדולה)** (=שעה שישית וחצי): ${sixAndAHalfFormatted}`,
-        "",
-        `**🌇 שקיעה - סוף זמן מנחה (=סוף שעה 12): ${sunsetFormatted}`
     ];
+    console.log('message: ', message);
     try {
+        if (process.env.NODE_ENV !== "prod") throw `process.env.NODE_ENV: ${process.env.NODE_ENV}`;
         const { data } = await axios.post(`https://api.telegram.org/bot${ENV.BotToken}/sendMessage`,
             {
                 chat_id: chatId,
@@ -101,7 +94,7 @@ async function sendToChatId({ cityName, chatId, hours }) {
         )
         log('telegram sendMessage: ', data);
     } catch (e) {
-        error(e?.response?.data);
+        error(e || e.response || e.response.data);
     }
 }
 
@@ -111,5 +104,4 @@ function formatForMessage(localeString) {
 }
 
 const zman = new Zmanim();
-// cron.schedule('0 10 * * *', zman.job);
 zman.job();
